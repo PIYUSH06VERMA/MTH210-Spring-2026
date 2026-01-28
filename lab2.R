@@ -1,0 +1,178 @@
+##2
+n_trial<-5
+p<-2/3
+sz<-50
+
+smpl<-numeric(length=50)
+smpl<-replicate(50,sum(ifelse(runif(5)<p,1,0)))
+obs<-table(factor(smpl,0:n_trial))
+E<-numeric(length=6)
+for(i in 0:5)
+{
+  E[i+1]<-choose(n_trial,i)*(p^i)*(1-p)^(n_trial-i)
+}
+res<-chisq.test(obs,p=E)
+res$p.value
+
+##3
+psn<-function(lmbda)
+{
+  u<-runif(1)
+  k<-0
+  p<-exp(-lmbda)
+  cdf<-exp(-lmbda)
+  while(u>cdf)
+  {
+    k<-k+1
+    p<-p*(lmbda/k)
+    cdf<-cdf+p
+  }
+  return(k)
+}
+smpl_pos<-replicate(100,psn(2.5))
+observations<-function(smpl,k,lmbda){
+  obs<-smpl
+  obs[obs>=k-1]<-k-1
+  obs<-table(factor(obs,0:(k-1)))
+  E<-numeric(length=k)
+  E[1]<-exp(-lmbda)
+  for(i in 1:(k-2))
+  {
+    E[i+1]<-E[i]*(lmbda/i)
+  }
+  E[k]<-(1-sum(E[1:(k-1)]))
+  res<-chisq.test(x=obs,p=E)
+  return(res$p.value)
+}
+res1<-observations(smpl_pos,5,2.5)
+res2<-observations(smpl_pos,10,2.5)
+cat("The p values for k=5 and k=10 are : ",res1,res2)
+
+##4
+l<-log(5)
+trun_pois<-numeric(length=50)
+cnt<-1
+while(cnt<=50)
+{
+  x<-psn(l)
+  if(x>0)
+  {
+    trun_pois[cnt]<-x
+    cnt<-cnt+1
+  }
+}
+observations_trunc<-function(smpl,k,lmbda){
+  obs<-smpl
+  obs[obs>=k]<-k
+  obs<-table(factor(obs,1:(k)))
+  E<-numeric(length=k)
+  E[1]<-lmbda/4
+  for(i in 1:(k-2))
+  {
+    E[i+1]<-E[i]*(lmbda/(i+1))
+  }
+  E[k]<-(1-sum(E[1:(k-1)]))
+  res<-chisq.test(x=obs,p=E)
+  return(res$p.value)
+}
+res1t<-observations_trunc(trun_pois,5,l)
+res2t<-observations_trunc(trun_pois,10,l)
+cat("The p values are :",res1t,res2t)
+##5
+d5<-function()
+{
+  u<-runif(1)
+  k<-1
+  e<-exp(1)
+  p1<-(1/2^k)
+  p2<-(1/factorial(k))
+  cdf<-(p1+p2)*(1/e)
+  while(u>cdf)
+  {
+    k<-k+1
+    p1<-p1*(1/2)
+    p2<-p2*(1/k)
+    cdf<-cdf+(1/e)*(p1+p2)
+  }
+  return(k)
+}
+smpl5<-replicate(100,d5())
+mean5<-mean(smpl5)
+var5<-var(smpl5)
+observations_qtn5<-function(smpl,k){
+  obs<-smpl
+  obs[obs>=k]<-k
+  obs<-table(factor(obs,1:(k)))
+  E<-numeric(length=k)
+  E[1]<-(1/exp(1))*(1+1/2)
+  for(i in 2:(k-1))
+  {
+    E[i]<-(1/exp(1))*(1/2^i+1/factorial(i))
+  }
+  E[k]<-(1-sum(E[1:(k-1)]))
+  res<-chisq.test(x=obs,p=E)
+  return(res$p.value)
+}
+res15<-observations_qtn5(smpl5,5)
+res25<-observations_qtn5(smpl5,10)
+cat("The p values for k=5, and k=10 are: ",res15,res25)
+##6
+omega<-function(){
+  ans<-numeric(length=5)
+  temp<-numeric(length=5)
+  i<-1
+  while(i<=5)
+  {
+    u<-runif(1)
+    p<-1/5
+    cdf<-p
+    while(u>cdf)
+    {
+      cdf<-cdf+p
+    }
+    k<-cdf*5
+    flag<-TRUE
+    for(j in 1:i)
+    {
+      if(temp[j]==k){
+        flag<-FALSE
+        break
+      }
+    }
+    if(flag)
+    {
+      ans[k]<-i
+      temp[i]<-k
+      i<-i+1
+    }
+  }
+  return(ans)
+}
+omega()
+##7
+Y<-ifelse(runif(1)<(1/3),1,2)
+
+distn<-function()
+{
+  u<-runif(1)
+  k<-1
+  p1<-(1/3)*(1/2)^k
+  p2<-(2^k)/(3^(k+1))
+  cdf<-p1+p2
+  while(u>cdf)
+  {
+    k<-k+1
+    p1<-p1*(1/2)
+    p2<-p2*(2/3)
+    cdf<-cdf+p1+p2
+  }
+  X<-k
+  Y<-ifelse(runif(1)<1/3,1,2)
+  Z<-X+Y
+  return(Z)
+}
+smpl7<-replicate(100,distn())
+smpl7
+mean_rs<-mean(smpl7)
+var_rs<-var(smpl7)
+cat("The mean and variance is ", mean_rs, var_rs)
